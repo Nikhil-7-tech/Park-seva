@@ -1,0 +1,7 @@
+project_id = "qadnhocfbyrwcdjprqfn"
+
+[functions.send-sms]
+verify_jwt = false
+
+[functions.send-remainder]
+verify_jwt = false

@@ -1,0 +1,12 @@
+﻿node_modules/
+.bun/
+bun.lockb
+dist/
+build/
+.env
+.env.*
+.DS_Store
+*.log
+.vscode/
+.idea/
+supabase/.temp
