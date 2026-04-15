@@ -89,7 +89,7 @@ export default function BookingPage() {
   const selectedSlot = useMemo(() => slots?.find((s) => s.id === selectedSlotId), [slots, selectedSlotId]);
 
   const hours = useMemo(() => hoursBetween(startTime, endTime), [startTime, endTime]);
-  const estimatedCost = useMemo(() => (selectedSlot ? hours * (selectedSlot.price_per_hour ?? 0) : 0), [hours, selectedSlot]);
+  const estimatedCost = useMemo(() => (selectedSlot ? hours * ((selectedSlot as any).price ?? selectedSlot.price_per_hour ?? 0) : 0), [hours, selectedSlot]);
 
   const createBooking = useMutation({
     mutationFn: async (paymentData?: { transactionId: string; paymentMode: string }) => {
@@ -322,7 +322,7 @@ try {
                     className="flex items-center justify-center gap-2 h-12"
                   >
                     <CreditCard className="w-4 h-4" />
-                    Stripe
+                    Razorpay
                   </Button>
                   <Button
                     variant={paymentMethod === 'upi' ? 'default' : 'outline'}
