@@ -120,10 +120,15 @@ if (paymentData) {
 
   // ✅ Pehle order create karo
   const { data: orderData, error: orderError } = await supabase.functions.invoke(
-    'create-razorpay-order',
-    { body: { amount: estimatedCost } }
-  );
-  if (orderError) throw new Error('Order creation failed');
+  'create-razorpay-order',
+  { body: { amount: estimatedCost } }
+);
+
+console.log('Order response:', orderData, orderError); // debug ke liye
+
+if (orderError || !orderData || orderData.error) {
+  throw new Error(orderError?.message || orderData?.error || 'Order creation failed');
+}
 
   // ✅ order_id ke saath Razorpay open karo
   await new Promise<void>((resolve, reject) => {
