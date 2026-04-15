@@ -7,7 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { loadStripe } from "@stripe/stripe-js";
+declare global {
+  interface Window { Razorpay: any; }
+}
 import { useAuth } from "@/contexts/AuthContext";
 import { useParams } from "react-router-dom";
 import UPIPaymentModal from "@/components/UPIPaymentModal";
@@ -97,45 +99,55 @@ export default function BookingPage() {
       const userId = user?.id;
       if (!userId) throw new Error("Please login to book a slot");
 
-      const stripePk = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
       let paymentIntentId: string | null = null;
-      let paymentStatus: string = "pending";
-      let paymentMode: string = "mock";
-      let transactionId: string | null = null;
+let paymentStatus: string = "pending";
+let paymentMode: string = "mock";
+let transactionId: string | null = null;
 
-      if (paymentData) {
-        paymentStatus = "paid";
-        paymentMode = paymentData.paymentMode;
-        transactionId = paymentData.transactionId;
-      } else if (stripePk && paymentMethod === 'stripe') {
-        const stripe = await loadStripe(stripePk);
-        if (!stripe) throw new Error("Stripe failed to load");
+if (paymentData) {
+  paymentStatus = "paid";
+  paymentMode = paymentData.paymentMode;
+  transactionId = paymentData.transactionId;
+} else if (paymentMethod === 'stripe') {
+  // Razorpay script load karo
+  await new Promise<void>((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Razorpay load failed'));
+    document.body.appendChild(script);
+  });
 
-        const resp = await fetch("/functions/v1/create-payment-intent", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ amount: estimatedCost }),
-        });
-        const json = await resp.json();
-        if (!resp.ok) throw new Error(json.error || "Payment intent failed");
-
-        const clientSecret = json.clientSecret as string;
-        paymentIntentId = json.paymentIntentId as string;
-
-        const result = await stripe.confirmPayment({
-          clientSecret,
-          confirmParams: { return_url: `${window.location.origin}/book?paid=1` },
-        });
-        if (result.error) throw new Error(result.error.message || "Payment confirmation failed");
-
-        paymentStatus = "paid";
-        paymentMode = "stripe";
-        transactionId = paymentIntentId;
-      } else {
-        paymentStatus = "pending";
-        paymentMode = "mock";
-        transactionId = `MOCK-${Date.now()}`;
-      }
+  // Razorpay payment open karo
+  await new Promise<void>((resolve, reject) => {
+    const options = {
+      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+      amount: estimatedCost * 100,
+      currency: 'INR',
+      name: 'Park Seva',
+      description: `Parking Slot #${selectedSlot.slot_number}`,
+      handler: function (response: any) {
+        paymentStatus = 'paid';
+        paymentMode = 'razorpay';
+        transactionId = response.razorpay_payment_id;
+        resolve();
+      },
+      modal: {
+        ondismiss: () => reject(new Error('Payment cancelled')),
+      },
+      prefill: {
+        email: user?.email || '',
+      },
+      theme: { color: '#3B82F6' },
+    };
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+  });
+} else {
+  paymentStatus = "pending";
+  paymentMode = "mock";
+  transactionId = `MOCK-${Date.now()}`;
+}
 
       const insertPayload: any = {
         slot_id: selectedSlot.id,
