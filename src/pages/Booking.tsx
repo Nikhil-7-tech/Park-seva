@@ -118,12 +118,20 @@ if (paymentData) {
     document.body.appendChild(script);
   });
 
-  // Razorpay payment open karo
+  // ✅ Pehle order create karo
+  const { data: orderData, error: orderError } = await supabase.functions.invoke(
+    'create-razorpay-order',
+    { body: { amount: estimatedCost } }
+  );
+  if (orderError) throw new Error('Order creation failed');
+
+  // ✅ order_id ke saath Razorpay open karo
   await new Promise<void>((resolve, reject) => {
     const options = {
       key: import.meta.env.VITE_RAZORPAY_KEY_ID,
       amount: estimatedCost * 100,
       currency: 'INR',
+      order_id: orderData.id, // ✅ Yeh naya line
       name: 'Park Seva',
       description: `Parking Slot #${selectedSlot.slot_number}`,
       handler: function (response: any) {
