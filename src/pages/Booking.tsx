@@ -133,8 +133,9 @@ if (paymentData) {
         resolve();
       },
       modal: {
-        ondismiss: () => reject(new Error('Payment cancelled')),
-      },
+  ondismiss: () => reject(new Error('Payment cancelled by user')),
+  escape: false,
+},
       prefill: {
         email: user?.email || '',
       },
@@ -211,6 +212,7 @@ try {
       toast({ title: "Booking confirmed", description: "Payment received and slot reserved." });
     },
     onError: (e: any) => {
+      if (e.message?.includes('cancelled')) return;
       toast({ title: "Booking failed", description: e.message, variant: "destructive" });
     },
   });
