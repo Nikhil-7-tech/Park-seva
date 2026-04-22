@@ -117,9 +117,12 @@ if (paymentData) {
 );
 
 console.log('Order response:', orderData, orderError); // debug ke liye
+console.log("Order ID:", orderData?.id);
+console.log("Key being used:", import.meta.env.VITE_RAZORPAY_KEY_ID);
 
 if (orderError) throw new Error(orderError.message || JSON.stringify(orderError));
 if (orderData?.error) throw new Error(orderData.error.description || JSON.stringify(orderData.error));
+
 
   // ✅ order_id ke saath Razorpay open karo
   await new Promise<void>((resolve, reject) => {
