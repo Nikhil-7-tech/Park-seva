@@ -109,14 +109,6 @@ if (paymentData) {
   paymentMode = paymentData.paymentMode;
   transactionId = paymentData.transactionId;
 } else if (paymentMethod === 'stripe') {
-  // Razorpay script load karo
-  await new Promise<void>((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error('Razorpay load failed'));
-    document.body.appendChild(script);
-  });
 
   // ✅ Pehle order create karo
   const { data: orderData, error: orderError } = await supabase.functions.invoke(
@@ -126,9 +118,8 @@ if (paymentData) {
 
 console.log('Order response:', orderData, orderError); // debug ke liye
 
-if (orderError || !orderData || orderData.error) {
-  throw new Error(orderError?.message || orderData?.error || 'Order creation failed');
-}
+if (orderError) throw new Error(orderError.message || JSON.stringify(orderError));
+if (orderData?.error) throw new Error(orderData.error.description || JSON.stringify(orderData.error));
 
   // ✅ order_id ke saath Razorpay open karo
   await new Promise<void>((resolve, reject) => {
