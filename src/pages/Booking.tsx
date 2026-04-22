@@ -15,6 +15,23 @@ import { useParams } from "react-router-dom";
 import UPIPaymentModal from "@/components/UPIPaymentModal";
 import { CreditCard, Smartphone } from "lucide-react";
 
+function getDynamicRate(baseRate: number, startTimeISO: string): number {
+  const hour = new Date(startTimeISO).getHours();
+
+  if (hour >= 6 && hour < 10) return Math.round(baseRate * 0.67);  // Morning: -33%
+  if (hour >= 10 && hour < 16) return baseRate;                     // Day: normal
+  if (hour >= 16 && hour < 20) return Math.round(baseRate * 1.67); // Evening: +67%
+  return Math.round(baseRate * 0.83);                               // Night: -17%
+}
+
+function getPricingLabel(startTimeISO: string): { label: string; emoji: string; color: string } {
+  const hour = new Date(startTimeISO).getHours();
+  if (hour >= 6 && hour < 10) return { label: "Morning Off-Peak", emoji: "🌅", color: "text-green-500" };
+  if (hour >= 10 && hour < 16) return { label: "Normal Hours", emoji: "☀️", color: "text-yellow-500" };
+  if (hour >= 16 && hour < 20) return { label: "Evening Peak", emoji: "🌆", color: "text-red-500" };
+  return { label: "Night Off-Peak", emoji: "🌙", color: "text-blue-400" };
+}
+
 
 type Slot = Tables<"slots"> & { lot?: Tables<"parking_lots"> };
 type Lot = Tables<"parking_lots">;
@@ -87,9 +104,26 @@ export default function BookingPage() {
   }, [slots, selectedSlotId]);
 
   const selectedSlot = useMemo(() => slots?.find((s) => s.id === selectedSlotId), [slots, selectedSlotId]);
-
   const hours = useMemo(() => hoursBetween(startTime, endTime), [startTime, endTime]);
-  const estimatedCost = useMemo(() => (selectedSlot ? hours * ((selectedSlot as any).price ?? selectedSlot.price_per_hour ?? 0) : 0), [hours, selectedSlot]);
+  const baseRate = useMemo(() =>
+  selectedSlot ? ((selectedSlot as any).price ?? selectedSlot.price_per_hour ?? 0) : 0,
+  [selectedSlot]
+);
+
+const dynamicRate = useMemo(() =>
+  getDynamicRate(baseRate, startTime),
+  [baseRate, startTime]
+);
+
+const estimatedCost = useMemo(() =>
+  hours * dynamicRate,
+  [hours, dynamicRate]
+);
+
+const pricingInfo = useMemo(() =>
+  getPricingLabel(startTime),
+  [startTime]
+);
 
   const createBooking = useMutation({
     mutationFn: async (paymentData?: { transactionId: string; paymentMode: string }) => {
@@ -163,6 +197,8 @@ if (orderData?.error) throw new Error(orderData.error.description || JSON.string
         start_time: new Date(startTime).toISOString(),
         end_time: new Date(endTime).toISOString(),
         total_amount: estimatedCost,
+        dynamic_rate: dynamicRate,
+        pricing_label: pricingInfo.label,
         plate_number: vehiclePlate, 
         status: "confirmed",
         payment_status: paymentStatus as any,
@@ -346,9 +382,15 @@ try {
 
               <div className="flex flex-col sm:flex-row sm:items-center justify-between border rounded-md p-3 gap-3">
                 <div>
-                  <div className="text-sm text-muted-foreground">Estimated</div>
-                  <div className="font-medium">{hours} hour(s) • ₹{estimatedCost}</div>
-                </div>
+  <div className="text-sm text-muted-foreground">Estimated</div>
+  <div className="font-medium">{hours} hour(s) • ₹{estimatedCost}</div>
+  <div className={`text-xs mt-1 font-medium ${pricingInfo.color}`}>
+    {pricingInfo.emoji} {pricingInfo.label} — ₹{dynamicRate}/hr
+    {dynamicRate !== baseRate && (
+      <span className="text-muted-foreground line-through ml-2">₹{baseRate}/hr</span>
+    )}
+  </div>
+</div>
                 <Button
                   onClick={() => {
                     if (paymentMethod === 'upi') {
@@ -384,6 +426,9 @@ try {
             <div>
               <div className="text-xs text-muted-foreground">Estimated</div>
               <div className="text-sm font-medium">{hours}h • ₹{estimatedCost}</div>
+              <div className={`text-xs ${pricingInfo.color}`}>   {/* ← yeh nai line add karo */}
+                 {pricingInfo.emoji} ₹{dynamicRate}/hr
+              </div>
             </div>
             <Button
               onClick={() => {

@@ -23,6 +23,7 @@ export default function PricingPage() {
       ],
       buttonText: "Start Parking",
       buttonVariant: "outline" as const,
+      href: "/book",
       popular: false,
       color: "from-gray-500/10 to-gray-600/10",
       borderColor: "border-gray-200"
@@ -44,6 +45,7 @@ export default function PricingPage() {
       ],
       buttonText: "Choose Smart Parker",
       buttonVariant: "default" as const,
+      href: "/subscribe?plan=smart_parker",
       popular: true,
       color: "from-primary/10 to-primary/20",
       borderColor: "border-primary/30"
@@ -66,6 +68,7 @@ export default function PricingPage() {
       ],
       buttonText: "Contact Sales",
       buttonVariant: "default" as const,
+      href: "/subscribe?plan=business_pro",
       popular: false,
       color: "from-purple-500/10 to-purple-600/10",
       borderColor: "border-purple-200"
@@ -156,7 +159,7 @@ export default function PricingPage() {
                 className="w-full mt-6"
                 size="lg"
               >
-                <Link to="/book">
+                <Link to={plan.href}>
                   {plan.buttonText}
                 </Link>
               </Button>

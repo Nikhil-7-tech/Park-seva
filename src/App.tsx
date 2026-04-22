@@ -17,6 +17,7 @@ import SupportPage from "./pages/Support";
 import AboutPage from "./pages/About";
 import Header from "./components/Header";
 import AIDashboard from "./components/AIDashboard";
+import SubscriptionPage from "./pages/SubscriptionPage";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ const App = () => (
                 <Route path="/pricing" element={<PricingPage />} />
                 <Route path="/support" element={<SupportPage />} />
                 <Route path="/about" element={<AboutPage />} />
+                <Route path="/subscribe" element={<SubscriptionPage />} />
                 <Route path="/ai-dashboard" element={<AIDashboard />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
