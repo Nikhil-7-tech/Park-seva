@@ -299,32 +299,50 @@ try {
                       <div className="text-sm text-muted-foreground">Loading slots...</div>
                     ) : slots && slots.length > 0 ? (
                       <>
-                        <div className="grid grid-cols-6 gap-2">
-                          {slots.slice(0, 36).map((s) => {
-                            const isSelected = selectedSlotId === s.id;
-                            const isUnavailable = s.is_available === false;
-                            const isAccessible = s.is_accessible;
-                            return (
-                              <button
-                                key={s.id}
-                                disabled={isUnavailable}
-                                onClick={() => setSelectedSlotId(s.id)}
-                                className={
-                                  `h-10 rounded-md text-xs font-medium border transition-colors ` +
-                                  (isUnavailable
-                                    ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                                    : isSelected
-                                      ? 'bg-primary text-primary-foreground border-primary'
-                                      : 'bg-card hover:bg-accent hover:text-accent-foreground') +
-                                  (isAccessible ? ' ring-1 ring-blue-300' : '')
-                                }
-                                title={`#${s.slot_number}`}
-                              >
-                                #{s.slot_number}
-                              </button>
-                            );
-                          })}
-                        </div>
+                        {/* Floor Plan View */}
+<div className="space-y-3">
+  <div className="flex items-center justify-center">
+    <div className="bg-blue-500/20 border border-blue-500 text-blue-400 text-xs px-4 py-1 rounded-full">
+      🚗 Entry / Exit
+    </div>
+  </div>
+  {['A','B','C','D'].map((row) => {
+    const rowSlots = slots.filter((s) => s.slot_number?.startsWith(row) && !s.slot_number?.startsWith(row + row));
+    if (rowSlots.length === 0) return null;
+    return (
+      <div key={row} className="flex items-center gap-2">
+        <div className="w-6 text-xs font-bold text-muted-foreground text-center">{row}</div>
+        <div className="flex gap-2 flex-1">
+          {rowSlots.sort((a, b) => parseInt(a.slot_number?.replace(/\D/g,'') || '0') - parseInt(b.slot_number?.replace(/\D/g,'') || '0')).map((s) => {
+            const isSelected = selectedSlotId === s.id;
+            const isUnavailable = s.is_available === false;
+            const isAccessible = s.is_accessible;
+            return (
+              <button
+                key={s.id}
+                disabled={isUnavailable}
+                onClick={() => setSelectedSlotId(s.id)}
+                className={
+                  `h-10 w-12 rounded-md text-xs font-medium border transition-all hover:scale-105 ` +
+                  (isUnavailable
+                    ? 'bg-red-500/20 border-red-500 text-red-400 cursor-not-allowed'
+                    : isSelected
+                      ? 'bg-primary text-primary-foreground border-primary scale-105'
+                      : 'bg-green-500/20 border-green-500 text-green-400 hover:bg-green-500/30') +
+                  (isAccessible ? ' ring-1 ring-blue-400' : '')
+                }
+                title={`${s.slot_number} — ${isUnavailable ? 'Booked' : 'Available'}`}
+              >
+                {s.slot_number}
+              </button>
+            );
+          })}
+        </div>
+        <div className="w-6 text-xs text-muted-foreground text-center">🚗</div>
+      </div>
+    );
+  })}
+</div>
                         <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
                           <div className="flex items-center gap-1"><span className="inline-block h-3 w-5 rounded bg-primary/80" /> Selected</div>
                           <div className="flex items-center gap-1"><span className="inline-block h-3 w-5 rounded bg-card border" /> Available</div>
