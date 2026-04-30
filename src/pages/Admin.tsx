@@ -126,29 +126,78 @@ export default function AdminPage() {
         </TabsContent>
 
         <TabsContent value="slots">
-          <Card>
-            <CardHeader>
-              <CardTitle>Slots</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {slots?.map((s) => (
-                <div key={s.id} className="flex items-center justify-between border rounded-md p-3">
-                  <div className="space-y-0.5">
-                    <div className="font-medium">{s.lot?.name} — #{s.slot_number}</div>
-                    <div className="text-sm text-muted-foreground">
-                      ₹{s.price_per_hour}/hr • Accessible: {s.is_accessible ? "Yes" : "No"} • Covered: {s.is_covered ? "Yes" : "No"}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm">Available</span>
-                    <Switch checked={Boolean(s.is_available)} onCheckedChange={() => toggleAvailability.mutate(s)} />
-                    <Button variant="outline" size="sm" onClick={() => putOnMaintenance.mutate(s)}>Maintenance</Button>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </TabsContent>
+  {/* Group slots by lot */}
+  {lots?.map((lot) => {
+    const lotSlots = slots?.filter((s) => s.lot_id === lot.id) ?? [];
+    const booked = lotSlots.filter((s) => !s.is_available).length;
+    const total = lotSlots.length;
+
+    return (
+      <Card key={lot.id} className="mb-4">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg">{lot.name}</CardTitle>
+            <div className="flex items-center gap-3 text-sm">
+              <span className="flex items-center gap-1">
+                <span className="inline-block w-3 h-3 rounded-full bg-green-500" />
+                Available: {total - booked}
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block w-3 h-3 rounded-full bg-red-500" />
+                Booked: {booked}
+              </span>
+              <span className="text-muted-foreground">Total: {total}</span>
+            </div>
+          </div>
+          {/* Progress bar */}
+          <div className="w-full bg-muted rounded-full h-2 mt-2">
+            <div
+              className="bg-red-500 h-2 rounded-full transition-all"
+              style={{ width: total > 0 ? `${(booked / total) * 100}%` : '0%' }}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            {total > 0 ? Math.round((booked / total) * 100) : 0}% occupancy
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-2">
+            {lotSlots.map((s) => (
+              <div
+                key={s.id}
+                title={`#${s.slot_number} — ${s.is_available ? 'Available' : 'Booked'}`}
+                className={`
+                  h-12 rounded-md flex items-center justify-center text-xs font-medium border cursor-pointer transition-all hover:scale-105
+                  ${s.is_available
+                    ? 'bg-green-500/20 border-green-500 text-green-400'
+                    : 'bg-red-500/20 border-red-500 text-red-400'}
+                  ${s.is_accessible ? 'ring-1 ring-blue-400' : ''}
+                `}
+              >
+                #{s.slot_number}
+              </div>
+            ))}
+          </div>
+          {/* Legend */}
+          <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <span className="inline-block w-4 h-4 rounded bg-green-500/20 border border-green-500" />
+              Available
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="inline-block w-4 h-4 rounded bg-red-500/20 border border-red-500" />
+              Booked
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="inline-block w-4 h-4 rounded ring-1 ring-blue-400" />
+              Accessible
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  })}
+</TabsContent>
 
         <TabsContent value="bookings">
           <Card>
