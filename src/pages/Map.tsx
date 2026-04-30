@@ -70,7 +70,7 @@ export default function Map() {
           name: lot.name,
           address: lot.address,
           hourly_rate: lot.hourly_rate,
-          total_slots: lot.total_slots,
+          total_slots: ss.length,
           available_slots: ss.filter((s: any) => s.is_available).length,
           has_ev: ss.some((s: any) => s.ev_supported !== 'none'),
           has_covered: ss.some((s: any) => s.is_covered),
