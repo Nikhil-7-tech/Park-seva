@@ -46,7 +46,7 @@ export default function AdminPage() {
       let query = supabase
         .from("bookings")
         .select("*, slots(*, parking_lots(*))")
-        .order("created_at", { ascending: false })
+        .order("start_time", { ascending: false })
         .limit(50);
       
       // Do not filter by payment_mode at DB level to support environments
