@@ -18,6 +18,7 @@ export default function AdminPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [paymentModeFilter, setPaymentModeFilter] = useState<string>("all");
+  const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
 
   const { data: slots } = useQuery({
     queryKey: ["admin-slots"],
@@ -75,7 +76,7 @@ export default function AdminPage() {
     mutationFn: async (slot: Slot) => {
       const { error } = await supabase
         .from("slots")
-        .update({ is_available: false, is_covered: slot.is_covered })
+        .update({ is_available: false, is_maintenance: true } as any)
         .eq("id", slot.id);
       if (error) throw error;
     },
@@ -125,9 +126,9 @@ export default function AdminPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="slots">
-  {/* Group slots by lot */}
-  {lots?.map((lot) => {
+    <TabsContent value="slots">
+    {/* Group slots by lot */}
+    {lots?.map((lot) => {
     const lotSlots = slots?.filter((s) => s.lot_id === lot.id) ?? [];
     const booked = lotSlots.filter((s) => !s.is_available).length;
     const total = lotSlots.length;
@@ -164,13 +165,16 @@ export default function AdminPage() {
           <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-2">
             {lotSlots.map((s) => (
               <div
-                key={s.id}
-                title={`#${s.slot_number} — ${s.is_available ? 'Available' : 'Booked'}`}
-                className={`
+               key={s.id}
+               title={`#${s.slot_number} — ${s.is_available ? 'Available' : 'Booked'}`}
+               onClick={() => setSelectedSlot(s)}
+                  className={`
                   h-12 rounded-md flex items-center justify-center text-xs font-medium border cursor-pointer transition-all hover:scale-105
                   ${s.is_available
                     ? 'bg-green-500/20 border-green-500 text-green-400'
-                    : 'bg-red-500/20 border-red-500 text-red-400'}
+                     : (s as any).is_maintenance
+                    ? 'bg-yellow-500/20 border-yellow-500 text-yellow-400'
+                     : 'bg-red-500/20 border-red-500 text-red-400'}
                   ${s.is_accessible ? 'ring-1 ring-blue-400' : ''}
                 `}
               >
@@ -189,14 +193,61 @@ export default function AdminPage() {
               Booked
             </span>
             <span className="flex items-center gap-1">
-              <span className="inline-block w-4 h-4 rounded ring-1 ring-blue-400" />
+             <span className="inline-block w-4 h-4 rounded bg-yellow-500/20 border border-yellow-500" />
+              Maintenance
+             </span>
+             <span className="flex items-center gap-1">
+             <span className="inline-block w-4 h-4 rounded ring-1 ring-blue-400" />
               Accessible
-            </span>
+             </span>
           </div>
         </CardContent>
       </Card>
     );
   })}
+{/* Slot Detail Popup */}
+  {selectedSlot && (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center" onClick={() => setSelectedSlot(null)}>
+      <div className="bg-card border rounded-xl p-6 w-80 space-y-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h3 className="font-bold text-lg">Slot #{(selectedSlot as any).slot_number}</h3>
+          <button onClick={() => setSelectedSlot(null)} className="text-muted-foreground hover:text-foreground">✕</button>
+        </div>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Status</span>
+            <span className={selectedSlot.is_available ? 'text-green-400' : (selectedSlot as any).is_maintenance ? 'text-yellow-400' : 'text-red-400'}>
+              {selectedSlot.is_available ? '🟢 Available' : (selectedSlot as any).is_maintenance ? '🟡 Maintenance' : '🔴 Booked'}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Accessible</span>
+            <span>{selectedSlot.is_accessible ? 'Yes' : 'No'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Covered</span>
+            <span>{selectedSlot.is_covered ? 'Yes' : 'No'}</span>
+          </div>
+        </div>
+        <div className="flex flex-col gap-2 pt-2">
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => { toggleAvailability.mutate(selectedSlot); setSelectedSlot(null); }}
+          >
+            {selectedSlot.is_available ? '🔴 Mark as Unavailable' : '🟢 Mark as Available'}
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full border-yellow-500 text-yellow-400 hover:bg-yellow-500/10"
+            onClick={() => { putOnMaintenance.mutate(selectedSlot); setSelectedSlot(null); }}
+          >
+            🟡 Put on Maintenance
+          </Button>
+        </div>
+      </div>
+    </div>
+  )}
 </TabsContent>
 
         <TabsContent value="bookings">
