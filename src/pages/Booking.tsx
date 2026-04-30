@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,7 @@ const isUuid = (value: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
 export default function BookingPage() {
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
   const { lotId: lotIdFromRoute } = useParams();
@@ -85,7 +86,6 @@ export default function BookingPage() {
         .from("slots")
         .select("*, parking_lots(*)")
         .eq("lot_id", selectedLotId)
-        .eq("is_available", true)
         .limit(200);
       if (error) throw error;
       return (data as any[]).map((row) => ({ ...row, lot: row.parking_lots })) as Slot[];
@@ -263,6 +263,7 @@ console.log('SMS response:', smsResp);
 };
   },
     onSuccess: (data: any) => {
+  queryClient.invalidateQueries({ queryKey: ["slots-by-lot", selectedLotId] });
   toast({ 
     title: "🎉 Booking Confirmed!", 
     description: `Slot ${data.slotNumber} • ${data.totalHours} hr(s) • ₹${data.totalCost} • ${new Date(data.bookingTime).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}`,
