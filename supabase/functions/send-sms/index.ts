@@ -50,12 +50,13 @@ export default async function handler(req: Request): Promise<Response> {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        route: "q",
-        message: message,
-        language: "english",
-        flash: 0,
-        numbers: phone,
-      }),
+       route: "v3",
+       sender_id: "FSTSMS",
+       message: message,
+       language: "english",
+       flash: 0,
+       numbers: phone,
+       }),
     });
 
     const json = await resp.json().catch(() => ({}));

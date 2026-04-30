@@ -240,20 +240,34 @@ try {
     .single();
   
   if (profile?.phone) {
-    await supabase.functions.invoke('send-sms', {
-      body: {
-        to: profile.phone,
-        message: `Booking confirmed at ${locationName}! Your parking slot is reserved.`,
-      },
-    });
+    const smsMessage = `ParkSeva: Slot ${selectedSlot.slot_number} booked at ${locationName}. Time: ${new Date(startTime).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })} to ${new Date(endTime).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}. Amount: Rs.${estimatedCost}. Vehicle: ${vehiclePlate}.`;
+
+   console.log('SMS being sent:', smsMessage);
+
+const smsResp = await supabase.functions.invoke('send-sms', {
+  body: {
+    to: profile.phone,
+    message: smsMessage,
+  },
+});
+console.log('SMS response:', smsResp);
   }
 } catch (_) {}
 
-      return data;
-    },
-    onSuccess: () => {
-      toast({ title: "Booking confirmed", description: "Payment received and slot reserved." });
-    },
+      return { 
+  ...data, 
+  slotNumber: selectedSlot.slot_number,
+  totalHours: hours,
+  totalCost: estimatedCost,
+  bookingTime: startTime,
+};
+  },
+    onSuccess: (data: any) => {
+  toast({ 
+    title: "🎉 Booking Confirmed!", 
+    description: `Slot ${data.slotNumber} • ${data.totalHours} hr(s) • ₹${data.totalCost} • ${new Date(data.bookingTime).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}`,
+  });
+},
     onError: (e: any) => {
       if (e.message?.includes('cancelled')) return;
       toast({ title: "Booking failed", description: e.message, variant: "destructive" });
