@@ -262,8 +262,19 @@ console.log('SMS response:', smsResp);
   bookingTime: startTime,
 };
   },
-    onSuccess: (data: any) => {
-  queryClient.invalidateQueries({ queryKey: ["slots-by-lot", selectedLotId] });
+    onSuccess: async (data: any) => {
+      // Page reload karo taaki fresh data aaye
+  setTimeout(() => {
+    window.location.reload();
+  }, 2000);
+      // Locally slot ko unavailable mark karo
+  queryClient.setQueryData(["slots-by-lot", selectedLotId], (old: any) =>
+    old?.map((s: any) =>
+      s.id === selectedSlotId ? { ...s, is_available: false } : s
+    )
+  );
+  await queryClient.invalidateQueries({ queryKey: ["slots-by-lot", selectedLotId] });
+  await queryClient.refetchQueries({ queryKey: ["slots-by-lot", selectedLotId] });
   toast({ 
     title: "🎉 Booking Confirmed!", 
     description: `Slot ${data.slotNumber} • ${data.totalHours} hr(s) • ₹${data.totalCost} • ${new Date(data.bookingTime).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}`,

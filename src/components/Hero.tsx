@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { ArrowRight, MapPin, Clock, Shield, Sparkles } from 'lucide-react';
 import heroImage from '@/assets/hero-parking.jpg';
 
 const Hero = () => {
+  const [showDemo, setShowDemo] = useState(false);
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden">
       {/* Background Image with Overlay */}
@@ -63,9 +64,29 @@ const Hero = () => {
             <Button asChild size="lg" className="gradient-primary text-white border-0 hover:opacity-90 transition-smooth shadow-glow px-8 py-4 text-lg">
               <Link to="/book">Start Parking Now <ArrowRight className="w-5 h-5 ml-2" /></Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground px-8 py-4 text-lg transition-smooth">
-              <Link to="/map">Watch Demo</Link>
+            <Button size="lg" variant="outline" className="border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground px-8 py-4 text-lg transition-smooth" onClick={() => setShowDemo(true)}>
+            Watch Demo
             </Button>
+
+{/* Demo Modal */}
+{showDemo && (
+  <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setShowDemo(false)}>
+    <div className="relative w-full max-w-3xl bg-black rounded-xl overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      <button onClick={() => setShowDemo(false)} className="absolute top-3 right-3 z-10 text-white bg-black/50 rounded-full w-8 h-8 flex items-center justify-center hover:bg-black/80">✕</button>
+      <div className="aspect-video">
+        <iframe
+          width="100%"
+          height="100%"
+          src="https://www.youtube.com/embed/Zsxdr7HeJuE?autoplay=1"
+          title="Park Seva Demo"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className="w-full h-full"
+        />
+      </div>
+    </div>
+  </div>
+)}
           </div>
 
           {/* Stats */}
