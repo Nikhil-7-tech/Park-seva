@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
+import QRCode from "react-qr-code";
 
 type Slot = Tables<"slots"> & { lot?: Tables<"parking_lots"> };
 type Lot = Tables<"parking_lots">;
@@ -19,6 +20,7 @@ export default function AdminPage() {
   const { toast } = useToast();
   const [paymentModeFilter, setPaymentModeFilter] = useState<string>("all");
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
+  const [qrLot, setQrLot] = useState<Lot | null>(null);
 
   const { data: slots } = useQuery({
     queryKey: ["admin-slots"],
@@ -109,6 +111,7 @@ export default function AdminPage() {
                     <TableHead>Address</TableHead>
                     <TableHead>Active</TableHead>
                     <TableHead>Hourly Rate</TableHead>
+                    <TableHead>QR Code</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -118,6 +121,11 @@ export default function AdminPage() {
                       <TableCell>{lot.address}</TableCell>
                       <TableCell>{lot.is_active ? "Yes" : "No"}</TableCell>
                       <TableCell>₹{lot.hourly_rate ?? 0}</TableCell>
+                      <TableCell>
+                      <Button size="sm" variant="outline" onClick={() => setQrLot(lot)}>
+                         🔳 QR Code
+                      </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -325,6 +333,44 @@ export default function AdminPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+{/* QR Code Modal */}
+{qrLot && (
+  <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center" onClick={() => setQrLot(null)}>
+    <div className="bg-card border rounded-xl p-8 space-y-4 shadow-xl text-center" onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="font-bold text-lg">{qrLot.name}</h3>
+        <button onClick={() => setQrLot(null)} className="text-muted-foreground hover:text-foreground ml-4">✕</button>
+      </div>
+      <p className="text-sm text-muted-foreground">Scan karo aur seedha booking page pe jao!</p>
+      <div className="bg-white p-4 rounded-lg inline-block" id="qr-code-box">
+        <QRCode value={`https://park-seva-cs51lg4ep-nikhil-7-techs-projects.vercel.app/book/${qrLot.id}`} size={200} />
+      </div>
+      <div className="text-xs text-muted-foreground break-all">
+        park-seva.vercel.app/book/{qrLot.id}
+      </div>
+      <Button className="w-full" onClick={() => {
+        const svg = document.querySelector('#qr-code-box svg') as SVGElement;
+        if (!svg) return;
+        const svgData = new XMLSerializer().serializeToString(svg);
+        const canvas = document.createElement('canvas');
+        canvas.width = 250; canvas.height = 250;
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        img.onload = () => {
+          ctx?.drawImage(img, 0, 0, 250, 250);
+          const a = document.createElement('a');
+          a.download = `${qrLot.name}-QR.png`;
+          a.href = canvas.toDataURL('image/png');
+          a.click();
+        };
+        img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+      }}>
+        ⬇️ Download QR Code
+      </Button>
+    </div>
+  </div>
+  )}
     </div>
   );
 }
