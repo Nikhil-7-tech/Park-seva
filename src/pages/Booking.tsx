@@ -237,7 +237,7 @@ try {
     .from("profiles")
     .select("phone")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
   
   if (profile?.phone) {
     const smsMessage = `ParkSeva: Slot ${selectedSlot.slot_number} booked at ${locationName}. Time: ${new Date(startTime).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })} to ${new Date(endTime).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}. Amount: Rs.${estimatedCost}. Vehicle: ${vehiclePlate}.`;
