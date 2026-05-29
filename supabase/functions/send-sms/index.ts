@@ -1,4 +1,5 @@
 // deno-lint-ignore-file no-explicit-any
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,13 +13,10 @@ type SmsRequest = {
 
 const FAST2SMS_API_KEY = Deno.env.get("FAST2SMS_API_KEY");
 
-export default async function handler(req: Request): Promise<Response> {
- if (req.method === 'OPTIONS') {
-  return new Response(null, { 
-    status: 204,
-    headers: corsHeaders 
-  });
-}
+serve(async (req: Request): Promise<Response> => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: corsHeaders });
+  }
 
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
@@ -41,7 +39,7 @@ export default async function handler(req: Request): Promise<Response> {
       throw new Error("Missing FAST2SMS_API_KEY");
     }
 
-    const phone = to.replace(/^\+91/, "");
+    const phone = to.replace(/^\+91/, "").replace(/\D/g, "");
 
     const resp = await fetch("https://www.fast2sms.com/dev/bulkV2", {
       method: "POST",
@@ -50,16 +48,17 @@ export default async function handler(req: Request): Promise<Response> {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-       route: "v3",
-       sender_id: "FSTSMS",
-       message: message,
-       language: "english",
-       flash: 0,
-       numbers: phone,
-       }),
+        route: "v3",
+        sender_id: "FSTSMS",
+        message: message,
+        language: "english",
+        flash: 0,
+        numbers: phone,
+      }),
     });
 
     const json = await resp.json().catch(() => ({}));
+    console.log("Fast2SMS response:", JSON.stringify(json));
 
     if (!json.return) {
       throw new Error(json.message?.[0] || "Fast2SMS error");
@@ -69,10 +68,12 @@ export default async function handler(req: Request): Promise<Response> {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+
   } catch (e: any) {
+    console.error("SMS error:", e);
     return new Response(JSON.stringify({ error: e?.message || "Unknown error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-}
+});
