@@ -11,7 +11,7 @@ const getAppUrl = () => {
   
   // Check if we're on Vercel production
   if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
-    return 'https://park-seva.vercel.app';
+    return `${window.location.origin}`;
   }
   
   // Check if we're on localhost
@@ -20,7 +20,7 @@ const getAppUrl = () => {
   }
   
   // Default to production URL for any other case
-  return 'https://park-seva.vercel.app';
+  return `${window.location.origin}`;
 };
 
 interface AuthContextType {
