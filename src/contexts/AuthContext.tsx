@@ -117,7 +117,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signUp = async (email: string, password: string, fullName?: string) => {
+  const signUp = async (email: string, password: string, fullName?: string, phone?: string) => {
   try {
     const redirectUrl = `${getAppUrl()}/`;
     
@@ -139,19 +139,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { error };
     }
 
+    // Profile banao phone ke saath
     if (data.user) {
       await supabase
         .from('profiles')
         .upsert({
           id: data.user.id,
           full_name: fullName || '',
+          phone: phone ? `+91${phone.replace(/\D/g, '')}` : null,
           updated_at: new Date().toISOString()
         });
     }
 
     toast({
-      title: "Check your email",
-      description: "We've sent you a confirmation link to complete your registration.",
+      title: "Registration successful!",
+      description: "Aap successfully register ho gaye.",
     });
 
     return { error: null };
