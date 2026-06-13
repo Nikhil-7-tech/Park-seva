@@ -41,21 +41,19 @@ serve(async (req: Request): Promise<Response> => {
 
     const phone = to.replace(/^\+91/, "").replace(/\D/g, "");
 
-    const resp = await fetch("https://www.fast2sms.com/dev/bulkV2", {
-      method: "POST",
-      headers: {
-        "authorization": FAST2SMS_API_KEY,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        route: "v3",
-        sender_id: "FSTSMS",
-        message: message,
-        language: "english",
-        flash: 0,
-        numbers: phone,
-      }),
+    // GET method with route q (Quick SMS)
+    const params = new URLSearchParams({
+      authorization: FAST2SMS_API_KEY,
+      route: "q",
+      message: message,
+      numbers: phone,
+      flash: "0",
     });
+
+    const resp = await fetch(
+      `https://www.fast2sms.com/dev/bulkV2?${params.toString()}`,
+      { method: "GET" }
+    );
 
     const json = await resp.json().catch(() => ({}));
     console.log("Fast2SMS response:", JSON.stringify(json));
