@@ -118,36 +118,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signUp = async (email: string, password: string, fullName?: string) => {
-    try {
-      const redirectUrl = `${getAppUrl()}/`;
-      
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: fullName ? { full_name: fullName } : undefined
-        }
-      });
-
-      if (error) {
-        toast({
-          title: "Sign up failed",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Check your email",
-          description: "We've sent you a confirmation link to complete your registration.",
-        });
+  try {
+    const redirectUrl = `${getAppUrl()}/`;
+    
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectUrl,
+        data: fullName ? { full_name: fullName } : undefined
       }
+    });
 
-      return { error };
-    } catch (error: any) {
+    if (error) {
+      toast({
+        title: "Sign up failed",
+        description: error.message,
+        variant: "destructive",
+      });
       return { error };
     }
-  };
+
+    if (data.user) {
+      await supabase
+        .from('profiles')
+        .upsert({
+          id: data.user.id,
+          full_name: fullName || '',
+          updated_at: new Date().toISOString()
+        });
+    }
+
+    toast({
+      title: "Check your email",
+      description: "We've sent you a confirmation link to complete your registration.",
+    });
+
+    return { error: null };
+  } catch (error: any) {
+    return { error };
+  }
+};
 
   const signIn = async (email: string, password: string) => {
     try {
