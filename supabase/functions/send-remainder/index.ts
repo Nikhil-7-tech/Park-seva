@@ -85,8 +85,7 @@ serve(async (req: Request): Promise<Response> => {
       slots (
         slot_number,
         parking_lots ( name )
-      ),
-      profiles!inner ( phone )
+      )
     `)
     .eq("status", "confirmed")
     .is("reminder_sent_at", null)
@@ -111,11 +110,23 @@ serve(async (req: Request): Promise<Response> => {
   const results: { booking_id: string; status: string; error?: string }[] = [];
 
   for (const b of bookings as any[]) {
-    const phone: string | null = b.profiles?.phone ?? null;
+    // Phone alag query se lao
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("phone")
+      .eq("id", b.user_id)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error(`Profile fetch error for booking ${b.id}:`, profileError.message);
+    }
+
+    const phone: string | null = profileData?.phone ?? null;
     if (!phone) {
       results.push({ booking_id: b.id, status: "skipped_no_phone" });
       continue;
     }
+
     const row: ReminderRow = {
       booking_id:    b.id,
       start_time:    b.start_time,
