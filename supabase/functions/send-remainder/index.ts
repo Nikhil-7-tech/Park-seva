@@ -1,5 +1,6 @@
 // @ts-nocheck
 // deno-lint-ignore-file no-explicit-any
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const FAST2SMS_API_KEY          = Deno.env.get("FAST2SMS_API_KEY");
@@ -23,7 +24,7 @@ async function sendSmsViaFast2SMS(to: string, message: string): Promise<void> {
   if (!FAST2SMS_API_KEY) {
     throw new Error("Missing FAST2SMS_API_KEY");
   }
-  const phone = to.replace(/^\+91/, "");
+  const phone = to.replace(/^\+91/, "").replace(/\D/g, "");
   const resp = await fetch("https://www.fast2sms.com/dev/bulkV2", {
     method: "POST",
     headers: {
@@ -60,7 +61,7 @@ function buildMessage(row: ReminderRow): string {
   );
 }
 
-export default async function handler(req: Request): Promise<Response> {
+serve(async (req: Request): Promise<Response> => {
   if (req.method !== "POST" && req.method !== "GET") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
@@ -144,4 +145,4 @@ export default async function handler(req: Request): Promise<Response> {
     JSON.stringify({ ok: true, sent: sentCount, total: bookings.length, results }),
     { status: 200, headers: { "Content-Type": "application/json" } }
   );
-}
+});
